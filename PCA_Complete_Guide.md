@@ -72,7 +72,9 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 pipe = Pipeline([
     ("scaler", StandardScaler()),
-    ("pca",    PCA(n_components=0.95, svd_solver="randomized",
+    # 'auto' lets sklearn pick 'full' (needed for the 0.95 fraction shortcut)
+    # For high-dim data with an integer k, switch to svd_solver='randomized'.
+    ("pca",    PCA(n_components=0.95, svd_solver="auto",
                    random_state=42)),
 ])
 
@@ -83,10 +85,11 @@ print("components kept :", pipe.named_steps["pca"].n_components_)
 print("variance kept   :", pipe.named_steps["pca"].explained_variance_ratio_.sum())
 ```
 
-Three things to notice:
+Four things to notice:
 1. **Split before fit.** Fitting PCA on `X_train + X_test` is leakage.
 2. **`StandardScaler` first.** Otherwise the feature with the biggest numeric range dominates PC1.
 3. **`n_components=0.95`** tells sklearn: *pick the smallest k that keeps 95 % of the variance.*
+4. **Solver + `n_components` compatibility.** The fractional shortcut (`0.95`) works only with `svd_solver='full'` or `'auto'`. The **randomized** solver is faster on high-dim data but requires an **integer** `n_components` — pick it from a scree analysis.
 
 ### SVD solver choice
 
